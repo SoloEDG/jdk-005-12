@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { Job } from "../../../shared/contracts";
 import { items } from "../../../shared/catalog";
-import { recipes, recipeById } from "../lib/recipes";
+import { recipes, recipeById, blendLabel } from "../lib/recipes";
 import { queueProgress } from "../lib/schedule";
+import { qualitySummary } from "../../../shared/quality";
+import QualityTag from "../../../shared/ui/QualityTag.vue";
 defineProps<{ jobs: readonly Readonly<Job>[]; hour: number }>();
 defineEmits<{ enqueue: [recipe: string]; claim: [id: string] }>();
 </script>
@@ -17,7 +19,9 @@ defineEmits<{ enqueue: [recipe: string]; claim: [id: string] }>();
         <b>{{ items[r.output].icon }}</b><strong>{{ r.name }}</strong
         ><small
           >{{ r.amount }} {{ items[r.input].name }} →
-          {{ r.quantity }} 份<br />{{ r.duration }}h · ¥{{ r.cost }}</small
+          {{ r.quantity }} 份<br />{{ r.duration }}h · ¥{{ r.cost }}<br />{{
+            blendLabel[r.blend]
+          }} · 失水 {{ r.dehydration }}% · 纯净度≤{{ r.purityCap }}%</small
         ><span>＋ 制作</span>
       </button>
     </div>
@@ -36,13 +40,31 @@ defineEmits<{ enqueue: [recipe: string]; claim: [id: string] }>();
           max="100"
         ></progress
         ><small>还需 {{ job.finish - hour }}h</small></template
-      ><button
-        v-else-if="job.status === 'ready'"
-        class="primary"
-        @click="$emit('claim', job.id)"
-      >
-        领取成品 {{ "★".repeat(job.receipt?.quality ?? 1) }}</button
-      ><small v-else>加工失败</small>
+      ><template v-else-if="job.status === 'ready'">
+        <div class="ready-output">
+          <QualityTag v-if="job.output" :quality="job.output" />
+          <small v-if="job.receipt" class="derivation">
+            由 {{ job.receipt.shares.length }} 份原料推导：{{
+              job.receipt.shares
+                .map(
+                  (s) =>
+                    `${s.certificate.id} ×${s.quantity}（${qualitySummary(s.certificate.quality)}）`,
+                )
+                .join("、")
+            }}
+          </small>
+          <small v-if="job.receipt" class="derivation">
+            原料来源：{{
+              job.receipt.shares
+                .flatMap((s) => s.certificate.shares)
+                .map((s) => `${s.source} ×${s.quantity}`)
+                .join(" / ")
+            }}
+          </small>
+        </div>
+        <button class="primary" @click="$emit('claim', job.id)">领取成品</button>
+      </template>
+      <small v-else>加工失败</small>
     </div>
     <p v-if="!jobs.some((j) => j.status !== 'claimed')" class="hint">
       机器空闲中，让丰收多一点价值。

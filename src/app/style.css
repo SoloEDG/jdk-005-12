@@ -896,3 +896,133 @@ progress {
     margin-top: 10px;
   }
 }
+
+.quality-tag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.metric-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  background: #eef3e5;
+  border: 1px solid #dbe3cc;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 9px;
+  color: #4c6845;
+}
+.metric-chip em {
+  font-style: normal;
+  color: #93a37b;
+  margin-right: 1px;
+}
+.metric-chip.legacy {
+  background: #f5efe0;
+  border-color: #e6dcc2;
+  color: #7d6c44;
+}
+.legacy-label {
+  font-size: 9px;
+  color: #a08b52;
+  font-weight: 600;
+}
+.quality-note {
+  flex-basis: 100%;
+  color: #a3a991;
+}
+.quality-tag.legacy .metric-chip {
+  font-variant-numeric: tabular-nums;
+}
+.inventory-row {
+  cursor: pointer;
+}
+.source-line {
+  color: #a3ab97 !important;
+  word-break: break-all;
+}
+.certificate-card {
+  background: #fbfaf1;
+  border: 1px dashed #d9dfc9;
+  border-radius: 6px;
+  padding: 13px 14px;
+  margin-top: 12px;
+}
+.certificate-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.certificate-head strong {
+  font-size: 11px;
+}
+.certificate-quantity {
+  font-size: 10px;
+  color: #7d8b6f;
+  margin-top: 5px;
+}
+.certificate-shares,
+.certificate-derived {
+  margin-top: 9px;
+  font-size: 10px;
+  color: #86917a;
+}
+.certificate-shares ul,
+.certificate-derived ul {
+  margin: 4px 0 0;
+  padding-left: 15px;
+  line-height: 1.8;
+  color: #69795c;
+}
+.certificate-note {
+  display: block;
+  margin-top: 8px;
+  font-size: 9px;
+  color: #a5ab97;
+}
+.order-preview {
+  flex-basis: 100%;
+  background: #f4f7ec;
+  border-radius: 4px;
+  padding: 7px 9px;
+  display: grid;
+  gap: 3px;
+}
+.order-preview > span {
+  font-size: 10px;
+  color: #576d47;
+}
+.order-preview small {
+  font-size: 9px;
+  color: #93a086;
+  word-break: break-all;
+}
+.spec-line {
+  color: #5d7750 !important;
+}
+.reject-line {
+  color: #b0704e !important;
+}
+.ready-output {
+  flex: 1;
+  min-width: 0;
+}
+.ready-output .quality-tag {
+  margin-top: 0;
+}
+.derivation {
+  display: block;
+  margin-top: 4px;
+  font-size: 9px;
+  color: #98a18d;
+  word-break: break-all;
+}
+.plot-quality {
+  flex-basis: 100%;
+  margin-top: 6px;
+}

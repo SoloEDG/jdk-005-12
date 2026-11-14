@@ -2,6 +2,8 @@
 import type { Item, Plot } from "../../../shared/contracts";
 import { items } from "../../../shared/catalog";
 import { crops, ready } from "../lib/crops";
+import { measuredQuality } from "../../../shared/quality";
+import QualityTag from "../../../shared/ui/QualityTag.vue";
 defineProps<{
   plots: readonly Readonly<Plot>[];
   selected: Item;
@@ -45,7 +47,12 @@ const seeds: Item[] = ["carrot", "corn", "berry"];
           @click="$emit('harvest', active)"
         >
           收获作物
-        </button></template
+        </button>
+        <QualityTag
+          class="plot-quality"
+          :quality="measuredQuality(plots[active]!.crop!.quality)"
+        />
+      </template
       ><template v-else
         ><span>翻好的土地，等待新种子</span
         ><button class="primary" @click="$emit('plant', active)">

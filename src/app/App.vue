@@ -5,10 +5,12 @@ import { FarmScene, FieldsPanel } from "../features/fields";
 import { WarehousePanel } from "../features/warehouse";
 import { WorkshopPanel } from "../features/workshop";
 import { OrdersPanel, EconomyPanel } from "../features/orders";
+import CertificateCard from "../shared/ui/CertificateCard.vue";
 import { createWorkspace } from "./workspace";
 const farm = createWorkspace(),
   active = ref(0),
-  tab = ref("warehouse");
+  tab = ref("warehouse"),
+  inspected = ref<string | null>(null);
 const { clock, warehouse, fields, workshop, orders, engine, notices } = farm;
 const timer = setInterval(() => {
   if (!clock.state.paused) engine.advance(1);
@@ -103,10 +105,13 @@ function reset() {
           <WarehousePanel
             v-if="tab === 'warehouse'"
             :batches="warehouse.state.batches"
+            :certificates="warehouse.traceRegistry()"
             :hour="clock.state.hour"
             :free="warehouse.free"
+            :shares-of="warehouse.sharesOf"
             :wasted="warehouse.state.wasted"
             @sell="farm.sell"
+            @inspect="(id) => (inspected = id)"
           /><WorkshopPanel
             v-if="tab === 'workshop'"
             :jobs="workshop.state.jobs"
@@ -117,9 +122,20 @@ function reset() {
             v-if="tab === 'orders'"
             :orders="orders.state.orders"
             :hour="clock.state.hour"
+            :preview="orders.preview"
             @reserve="orders.reserve"
             @deliver="(id) => orders.deliver(id, clock.state.hour)"
             @cancel="orders.cancel"
+          />
+          <CertificateCard
+            v-if="
+              tab === 'warehouse' &&
+              inspected &&
+              warehouse.state.batches.some((b) => b.id === inspected)
+            "
+            :certificate="warehouse.state.certificates[warehouse.state.batches.find((b) => b.id === inspected)!.certificateId]!"
+            :certificates="warehouse.traceRegistry()"
+            :quantity="warehouse.state.batches.find((b) => b.id === inspected)?.quantity"
           />
           <div class="tip-card">
             <span>✦ 今日小贴士</span>

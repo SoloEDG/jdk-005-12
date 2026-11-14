@@ -5,7 +5,9 @@ import { createWarehouse } from "../features/warehouse";
 import { createWorkshop } from "../features/workshop";
 import { createOrders, salePrice } from "../features/orders";
 import { items } from "../shared/catalog";
+import { measuredQuality } from "../shared/quality";
 import { saveFarm, loadFarm } from "./persistence";
+import { migrateSnapshot } from "./migration";
 export function createWorkspace() {
   const notices = ref<string[]>(["欢迎回到青禾农场。先备一份胡萝卜订单吧。"]);
   const notice = (message: string) => {
@@ -14,7 +16,12 @@ export function createWorkspace() {
   const clock = createClock();
   const warehouse = createWarehouse(() => clock.state.hour, notice);
   const orders = createOrders(warehouse, notice, clock.state.hour);
-  const fields = createFields(orders.spend, warehouse.add, notice);
+  const fields = createFields(
+    orders.spend,
+    (item, n, quality, source) =>
+      warehouse.add(item, n, measuredQuality(quality), clock.state.hour, source),
+    notice,
+  );
   const workshop = createWorkshop(
     { ...warehouse, spend: orders.spend },
     notice,
@@ -23,7 +30,9 @@ export function createWorkspace() {
     () => clock.state.hour,
     clock.setHour,
     (t) => {
-      warehouse.tick(t.to);
+      const dropped = warehouse.tick(t.to);
+      for (const reservation of dropped)
+        orders.onReservationLost(reservation.id);
       fields.tick(t);
       workshop.tick(t.to);
       orders.tick(t.to);
@@ -61,17 +70,22 @@ export function createWorkspace() {
     },
     load() {
       try {
-        const data = loadFarm<ReturnType<typeof snapshot>>();
-        if (!data) {
+        const stored = loadFarm<ReturnType<typeof snapshot>>();
+        if (!stored) {
           notice("还没有本机存档");
           return;
         }
-        clock.restore(data.clock);
-        warehouse.restore(data.warehouse);
-        fields.restore(data.fields);
-        workshop.restore(data.workshop);
-        orders.restore(data.orders);
-        notice("已恢复保存时刻");
+        const migrated = migrateSnapshot(stored.data);
+        clock.restore(migrated.clock);
+        warehouse.restore(migrated.warehouse);
+        fields.restore(migrated.fields);
+        workshop.restore(migrated.workshop);
+        orders.restore(migrated.orders);
+        notice(
+          migrated.migrated
+            ? "已恢复存档，旧星级批次已迁移为未检验区间"
+            : "已恢复保存时刻",
+        );
       } catch {
         notice("存档损坏，无法恢复");
       }

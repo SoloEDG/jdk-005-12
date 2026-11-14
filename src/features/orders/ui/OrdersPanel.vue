@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import type { Order } from "../../../shared/contracts";
+import type { Order, Receipt } from "../../../shared/contracts";
 import { items } from "../../../shared/catalog";
-defineProps<{ orders: readonly Readonly<Order>[]; hour: number }>();
+import { describeInspection, qualitySummary } from "../../../shared/quality";
+defineProps<{
+  orders: readonly Readonly<Order>[];
+  hour: number;
+  preview: (id: string) => Receipt | null;
+}>();
 defineEmits<{
   reserve: [id: string];
   deliver: [id: string];
@@ -18,7 +23,7 @@ const statusName = {
   <section class="panel orders-panel">
     <div class="panel-heading">
       <h2>村庄订单</h2>
-      <span>按时交付，积累声望</span>
+      <span>按检验区间收货，不合格会说明原因</span>
     </div>
     <article
       v-for="order in orders"
@@ -28,13 +33,32 @@ const statusName = {
     >
       <div class="order-icon">{{ items[order.item].icon }}</div>
       <div class="order-info">
-        <strong
-          >{{ items[order.item].name }} ×{{ order.quantity }}
-          <em>{{ "★".repeat(order.minQuality) }}起</em></strong
-        ><small
+        <strong>{{ items[order.item].name }} ×{{ order.quantity }}</strong>
+        <small class="spec-line">要求 {{ describeInspection(order.spec) }}</small>
+        <small
           >{{ order.id }} · {{ statusName[order.status] }} ·
           {{ Math.max(0, order.deadline - hour) }}h</small
         >
+        <small v-if="order.reject" class="reject-line">不合格：{{ order.reject }}</small>
+        <div
+          v-if="order.status === 'reserved' && preview(order.id)"
+          class="order-preview"
+        >
+          <span>已锁定：{{ qualitySummary(preview(order.id)!.quality) }}</span>
+          <small
+            >来源 {{
+              preview(order.id)!
+                .shares.map((s) => `${s.certificate.id} ×${s.quantity}`)
+                .join("、")
+            }}</small
+          >
+          <small>{{
+            preview(order.id)!
+              .shares.flatMap((s) => s.certificate.shares)
+              .map((s) => `${s.source} ×${s.quantity}`)
+              .join(" / ")
+          }}</small>
+        </div>
       </div>
       <b class="reward">¥{{ order.reward }}</b>
       <div class="order-actions">

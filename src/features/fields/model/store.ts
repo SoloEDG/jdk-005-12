@@ -1,9 +1,20 @@
 import { reactive, readonly } from "vue";
-import type { Item, Plot, Tick, Notice } from "../../../shared/contracts";
-import { crops, grow, ready } from "../lib/crops";
+import type {
+  Item,
+  Plot,
+  Tick,
+  Notice,
+  QualityReading,
+} from "../../../shared/contracts";
+import { crops, grow, ready, startingQuality } from "../lib/crops";
 export function createFields(
   spend: (amount: number) => boolean,
-  harvest: (item: Item, n: number, q: number) => void,
+  harvest: (
+    item: Item,
+    n: number,
+    quality: QualityReading,
+    source: string,
+  ) => void,
   notice: Notice,
 ) {
   const state = reactive({
@@ -30,6 +41,7 @@ export function createFields(
         water: 70,
         stress: 0,
         harvests: 0,
+        quality: startingQuality(state.selected),
       };
       notice("种下了新的希望");
     },
@@ -42,12 +54,19 @@ export function createFields(
         crop = plot?.crop;
       if (!crop || !ready(crop)) return;
       const def = crops[crop.item]!;
-      harvest(crop.item, def.yield, crop.stress <= 2 ? 2 : 1);
+      harvest(
+        crop.item,
+        def.yield,
+        crop.quality,
+        `土地${id + 1} · 第${crop.planted}时播种` +
+          (crop.harvests ? ` · 第${crop.harvests + 1}茬` : ""),
+      );
       if (crop.harvests < def.repeat) {
+        /** 再生茬沿用当前三项数值继续累积，新一茬重新从幼苗阶段计时。 */
         crop.growth = 0;
         crop.harvests++;
       } else plot.crop = null;
-      notice("收获已按品质分批入仓");
+      notice("收获已按实际检验数值入仓");
     },
     tick(tick: Tick) {
       for (const plot of state.plots)
